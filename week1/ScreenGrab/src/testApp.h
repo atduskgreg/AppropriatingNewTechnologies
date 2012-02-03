@@ -21,10 +21,11 @@ class testApp : public ofBaseApp{
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
 
-		ofImage		image, maskImage;
-		ofxCvHaarFinder finder;	 // object used to detect haar features
+		ofImage		image, maskImage, jack;
+		ofxCvHaarFinder jackFinder, vidFinder;	 // object used to detect haar features
 
-
+        ofVideoGrabber cam;
+    
         int w;
         int h;
 

@@ -7,28 +7,47 @@ extern "C" {
 //--------------------------------------------------------------
 void testApp::setup(){
 
-	finder.setup("haarcascade_frontalface_default.xml");
+	jackFinder.setup("haarcascade_frontalface_default.xml");
+	vidFinder.setup("haarcascade_frontalface_default.xml");
+
     w = 640;
     h = 480;
     
 	image.allocate(w, h, OF_IMAGE_COLOR);
+    cout << "load mask" << endl;
+
     
-    maskImage.loadImage("face_mask.png");
+    maskImage.loadImage("bigJackMask.png");
 	maskImage.setImageType(OF_IMAGE_COLOR);
     
+    cout << "load jack" << endl;
+
+    
+    jack.loadImage("jack2.jpg");
+    
+    cout << "set jack image type" << endl;
+	jack.setImageType(OF_IMAGE_COLOR);
 
 	ofSetFrameRate(30);
     clone.setup(w,h);
+    
+    
+    cout << "init grabber" << endl;
+
+    cam.initGrabber(w,h);
+
 
     
     showLines = true;
+    cout << "end of setup" << endl;
 }
 
 //--------------------------------------------------------------
 void testApp::update(){
+    cam.grabFrame();
+
 	
-	
-	unsigned char * data = pixelsBelowWindow(ofGetWindowPositionX(),ofGetWindowPositionY(),w,h);
+	/*unsigned char * data = pixelsBelowWindow(ofGetWindowPositionX(),ofGetWindowPositionY(),w,h);
 	
 	// now, let's get the R and B data swapped, so that it's all OK:
 	for (int i = 0; i < w*h; i++){
@@ -40,6 +59,8 @@ void testApp::update(){
 		data[i*4+2] = data[i*4+3];   
 		data[i*4+3] = a; 
 	}
+    
+    
 	
 	
 	if (data!= NULL) {
@@ -47,7 +68,10 @@ void testApp::update(){
 		image.setImageType(OF_IMAGE_COLOR);
 		image.update();
 		finder.findHaarObjects(image.getPixelsRef());
-	}
+	}*/
+    
+    jackFinder.findHaarObjects(jack.getPixelsRef());
+    vidFinder.findHaarObjects(cam.getPixelsRef());
 
 }
 
@@ -64,16 +88,16 @@ void testApp::draw(){
     //#2
 	
     
-    if(finder.blobs.size() >= 2){
+    if(jackFinder.blobs.size() > 0 && vidFinder.blobs.size() > 0){
         src.allocate(w,h);
         mask.allocate(w,h);
         
         
-        cout << "0 w: " << finder.blobs[0].boundingRect.width << " h: " << finder.blobs[0].boundingRect.height << endl;
-        cout << "1 w: " << finder.blobs[1].boundingRect.width << " h: " << finder.blobs[1].boundingRect.height << endl;
+       // cout << "0 w: " << finder.blobs[0].boundingRect.width << " h: " << finder.blobs[0].boundingRect.height << endl;
+        //cout << "1 w: " << finder.blobs[1].boundingRect.width << " h: " << finder.blobs[1].boundingRect.height << endl;
         
         
-        int finalWidth = finder.blobs[1].boundingRect.width;
+        /*int finalWidth = finder.blobs[1].boundingRect.width;
         int finalHeight = finder.blobs[1].boundingRect.height;
         
         if(finder.blobs[1].boundingRect.width > finder.blobs[0].boundingRect.width){
@@ -82,23 +106,22 @@ void testApp::draw(){
         
         if(finder.blobs[1].boundingRect.height > finder.blobs[0].boundingRect.height){
             finalHeight = finder.blobs[0].boundingRect.height;
-        }
+        }*/
         
         
-        //float xProportion = finder.blobs[1].boundingRect.width / finder.blobs[0].boundingRect.width;
-        //float yProportion = finder.blobs[1].boundingRect.height / finder.blobs[0].boundingRect.height;
+        float xProportion = vidFinder.blobs[0].boundingRect.width / jackFinder.blobs[0].boundingRect.width;
+        float yProportion = vidFinder.blobs[0].boundingRect.height / jackFinder.blobs[0].boundingRect.height;
 
         
-
-        
+         
         src.begin();
            ofClear(0,255);        
-           image.draw(finder.blobs[1].boundingRect.x - finder.blobs[0].boundingRect.x, finder.blobs[1].boundingRect.y - finder.blobs[0].boundingRect.y);
+           jack.draw(vidFinder.blobs[0].boundingRect.x, vidFinder.blobs[0].boundingRect.y, xProportion * jackFinder.blobs[0].boundingRect.width, yProportion * jackFinder.blobs[0].boundingRect.height);
         src.end();
         
         mask.begin();
             ofClear(0, 255);
-            maskImage.draw(finder.blobs[1].boundingRect.x, finder.blobs[1].boundingRect.y, finalWidth, finalHeight);
+            maskImage.draw(vidFinder.blobs[0].boundingRect.x, vidFinder.blobs[0].boundingRect.y, xProportion * jackFinder.blobs[0].boundingRect.width,yProportion * jackFinder.blobs[0].boundingRect.height );
 		mask.end();
         
         ofSetColor(255);
@@ -106,24 +129,24 @@ void testApp::draw(){
 
          
 
-        clone.setStrength(30);        
-		clone.update(src.getTextureReference(), image.getTextureReference(), mask.getTextureReference());
+        clone.setStrength(20);        
+		clone.update(src.getTextureReference(), cam.getTextureReference(), mask.getTextureReference());
         ofBackground(0);
         clone.draw(0,0);
         
         //src.draw(0,0);
         //mask.draw(0,0);
-
+        //jack.draw(0,0);
+        //cam.draw(0,0);
         
-        cout << "cloned yo!" << endl; 
         
         if(showLines){
         
             ofSetColor(0,255,0);
-            ofDrawBitmapString("0", finder.blobs[0].boundingRect.x, finder.blobs[0].boundingRect.y);
-            ofDrawBitmapString("1", finder.blobs[1].boundingRect.x, finder.blobs[1].boundingRect.y);
-            ofRect(finder.blobs[0].boundingRect);
-            ofRect(finder.blobs[1].boundingRect);
+            ofDrawBitmapString("jack: ", jackFinder.blobs[0].boundingRect.x, jackFinder.blobs[0].boundingRect.y);
+            ofDrawBitmapString("vid: ", vidFinder.blobs[0].boundingRect.x, vidFinder.blobs[0].boundingRect.y);
+            ofRect(jackFinder.blobs[0].boundingRect);
+            ofRect(vidFinder.blobs[0].boundingRect);
             ofSetColor(255);
 
         }
