@@ -2,6 +2,7 @@
 
 #include "ofMain.h"
 #include "ofxOpenCv.h"
+#include "Clone.h"
 
 class testApp : public ofBaseApp{
 
@@ -19,10 +20,16 @@ class testApp : public ofBaseApp{
 		void windowResized(int w, int h);
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
-		
-		//ofTexture	tex;
-		//ofPixels	pixels;
-		ofImage		image;
+
+		ofImage		image, maskImage;
 		ofxCvHaarFinder finder;	 // object used to detect haar features
+
+
+        int w;
+        int h;
+
+    bool showLines;
+    
+        Clone clone;
 
 };
